@@ -1,7 +1,9 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
+const authRoutes = require('./routes/authRoutes');
 
 // Initialize the Express application
 const app = express();
@@ -9,6 +11,13 @@ const app = express();
 // Middleware
 app.use(cors()); // Enable Cross-Origin Resource Sharing
 app.use(express.json()); // Parse JSON payloads
+app.use(cookieParser()); // Parse cookies
+
+// Connect to database
+connectDB();
+
+// Routes
+app.use('/api/auth', authRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
@@ -17,9 +26,6 @@ app.get('/api/health', (req, res) => {
         message: 'NextHaven API is running'
     });
 });
-
-// Connect to database
-connectDB();
 
 // Start the server
 const PORT = process.env.PORT || 5000;
