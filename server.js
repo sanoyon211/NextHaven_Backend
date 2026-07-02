@@ -5,9 +5,16 @@ const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const roomRoutes = require('./routes/roomRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const webhookRoutes = require('./routes/webhookRoutes');
 
 // Initialize the Express application
 const app = express();
+
+// Stripe Webhook: MUST be defined before express.json()
+// Use express.raw to preserve raw request body for Stripe signature verification
+app.use('/api/webhooks', express.raw({ type: 'application/json' }), webhookRoutes);
 
 // Middleware
 app.use(cors()); // Enable Cross-Origin Resource Sharing
@@ -20,6 +27,8 @@ connectDB();
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/rooms', roomRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
