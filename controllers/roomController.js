@@ -1,4 +1,5 @@
 const Room = require('../models/Room');
+const Booking = require('../models/Booking');
 const cloudinary = require('../config/cloudinary');
 const streamifier = require('streamifier');
 
@@ -73,4 +74,73 @@ const createRoom = async (req, res) => {
   }
 };
 
-module.exports = { createRoom };
+// @desc    Get all rooms with search, filter, and availability
+// @route   GET /api/rooms
+// @access  Public
+const getAllRooms = async (req, res) => {
+  try {
+    const { checkIn, checkOut, capacity, minPrice, maxPrice, roomType, amenities } = req.query;
+
+    let query = { status: 'available' };
+
+    // 1. Availability Calculation Logic
+    if (checkIn && checkOut) {
+      const checkInDate = new Date(checkIn);
+      const checkOutDate = new Date(checkOut);
+
+      if (isNaN(checkInDate) || isNaN(checkOutDate)) {
+        return res.status(400).json({ message: 'Invalid checkIn or checkOut date format' });
+      }
+
+      // Find overlapping bookings
+      // Overlap condition: Booking starts before requested checkout AND ends after requested checkin
+      const overlappingBookings = await Booking.find({
+        checkInDate: { $lt: checkOutDate },
+        checkOutDate: { $gt: checkInDate },
+      });
+
+      // Extract unique room ObjectIds
+      const bookedRoomIds = overlappingBookings.map((booking) => booking.room);
+
+      // Exclude booked rooms
+      if (bookedRoomIds.length > 0) {
+        query._id = { $nin: bookedRoomIds };
+      }
+    }
+
+    // 2. Multi-Parametric Filtering
+    if (capacity) {
+      query.capacity = { $gte: Number(capacity) };
+    }
+
+    if (minPrice || maxPrice) {
+      query.pricePerNight = {};
+      if (minPrice) query.pricePerNight.$gte = Number(minPrice);
+      if (maxPrice) query.pricePerNight.$lte = Number(maxPrice);
+    }
+
+    if (roomType) {
+      query.roomType = roomType;
+    }
+
+    if (amenities) {
+      // Split comma-separated string into array
+      const amenitiesArray = amenities.split(',').map((item) => item.trim());
+      query.amenities = { $all: amenitiesArray };
+    }
+
+    // Execute query
+    const rooms = await Room.find(query);
+
+    res.status(200).json({
+      success: true,
+      count: rooms.length,
+      rooms,
+    });
+  } catch (error) {
+    console.error(`Get All Rooms Error: ${error.message}`);
+    res.status(500).json({ message: 'Failed to fetch rooms' });
+  }
+};
+
+module.exports = { createRoom, getAllRooms };
