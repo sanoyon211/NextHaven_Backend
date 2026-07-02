@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const connectDB = require('./config/db');
 
 // Initialize the Express application
 const app = express();
@@ -16,6 +17,9 @@ app.get('/api/health', (req, res) => {
         message: 'NextHaven API is running'
     });
 });
+
+// Connect to database
+connectDB();
 
 // Start the server
 const PORT = process.env.PORT || 5000;
