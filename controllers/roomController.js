@@ -130,11 +130,28 @@ const getAllRooms = async (req, res) => {
     }
 
     // Execute query
-    const rooms = await Room.find(query);
+    let rooms = await Room.find(query);
+    
+    // Dynamic Pricing (Weekend Surge)
+    let isDynamicPriceApplied = false;
+    if (checkIn) {
+      const checkInDateObj = new Date(checkIn);
+      const day = checkInDateObj.getDay();
+      // Friday (5) or Saturday (6)
+      if (day === 5 || day === 6) {
+        isDynamicPriceApplied = true;
+        rooms = rooms.map(room => {
+          const roomObj = room.toObject ? room.toObject() : room;
+          roomObj.pricePerNight = Math.ceil(roomObj.pricePerNight * 1.2); // 20% surge
+          return roomObj;
+        });
+      }
+    }
 
     res.status(200).json({
       success: true,
       count: rooms.length,
+      isDynamicPriceApplied,
       rooms,
     });
   } catch (error) {

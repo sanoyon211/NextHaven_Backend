@@ -19,15 +19,15 @@ const getAnalytics = async (req, res) => {
       paymentStatus: 'paid',
     });
 
-    // 3. Count total rooms
-    const totalRoomsCount = await Room.countDocuments();
+    // 3. Count available rooms
+    const availableRoomsCount = await Room.countDocuments({ status: 'available' });
 
     res.status(200).json({
       success: true,
       data: {
         totalRevenue,
         activeBookings: activeBookingsCount,
-        totalRooms: totalRoomsCount,
+        availableRooms: availableRoomsCount,
       }
     });
   } catch (error) {
