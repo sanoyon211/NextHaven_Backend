@@ -109,7 +109,6 @@ const stripeWebhook = async (req, res) => {
         stripeSessionId: session.id,
       });
 
-      console.log(`Booking created for session: ${session.id}`);
     } catch (error) {
       console.error(`Error saving booking to DB: ${error.message}`);
       return res.status(500).send('Internal Server Error');
