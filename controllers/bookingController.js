@@ -1,6 +1,7 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const Room = require('../models/Room');
 const Booking = require('../models/Booking');
+const sendEmail = require('../utils/sendEmail');
 
 // @desc    Create Stripe Checkout Session
 // @route   POST /api/bookings/checkout
@@ -119,4 +120,46 @@ const stripeWebhook = async (req, res) => {
   res.status(200).send();
 };
 
-module.exports = { createCheckoutSession, stripeWebhook };
+// @desc    Cancel a booking
+// @route   PUT /api/bookings/:id/cancel
+// @access  Private
+const cancelBooking = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    // Fetch the booking by req.params.id and populate the 'user' and 'room' fields.
+    const booking = await Booking.findById(bookingId).populate('user').populate('room');
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    // Verify that the booking belongs to the currently logged-in user
+    if (booking.user._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to cancel this booking' });
+    }
+
+    // Update the booking's paymentStatus to 'refunded'
+    booking.paymentStatus = 'refunded';
+
+    // Update the associated room's status back to 'available'
+    booking.room.status = 'available';
+
+    // Save both the booking and room documents
+    await booking.save();
+    await booking.room.save();
+
+    // Send confirmation email
+    const emailSubject = 'Booking Cancellation Confirmation';
+    const emailText = `Hello ${booking.user.name},\n\nYour booking for ${booking.room.title} has been successfully cancelled and your refund is being processed.`;
+    const emailHtml = `<h3>Hello ${booking.user.name},</h3><p>Your booking for <strong>${booking.room.title}</strong> has been successfully cancelled and your refund is being processed.</p>`;
+    
+    await sendEmail(booking.user.email, emailSubject, emailText, emailHtml);
+
+    res.status(200).json({ message: 'Booking successfully cancelled and confirmation email sent' });
+  } catch (error) {
+    console.error(`Cancel Booking Error: ${error.message}`);
+    res.status(500).json({ message: 'Failed to cancel booking' });
+  }
+};
+
+module.exports = { createCheckoutSession, stripeWebhook, cancelBooking };
