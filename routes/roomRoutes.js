@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createRoom, getAllRooms } = require('../controllers/roomController');
+const { createRoom, getAllRooms, getRoomById } = require('../controllers/roomController');
 const { verifyToken, isAdmin } = require('../middleware/authMiddleware');
 const uploadImages = require('../middleware/uploadMiddleware');
 
@@ -11,5 +11,9 @@ router.post('/', verifyToken, isAdmin, uploadImages.array('images', 5), createRo
 // GET /api/rooms
 // Public route to get all rooms with search, filter, and availability
 router.get('/', getAllRooms);
+
+// GET /api/rooms/:id
+// Public route to get single room
+router.get('/:id', getRoomById);
 
 module.exports = router;

@@ -109,14 +109,14 @@ const getAllRooms = async (req, res) => {
     }
 
     // 2. Multi-Parametric Filtering
-    if (capacity) {
+    if (capacity && !isNaN(capacity)) {
       query.capacity = { $gte: Number(capacity) };
     }
 
-    if (minPrice || maxPrice) {
+    if ((minPrice && !isNaN(minPrice)) || (maxPrice && !isNaN(maxPrice))) {
       query.pricePerNight = {};
-      if (minPrice) query.pricePerNight.$gte = Number(minPrice);
-      if (maxPrice) query.pricePerNight.$lte = Number(maxPrice);
+      if (minPrice && !isNaN(minPrice)) query.pricePerNight.$gte = Number(minPrice);
+      if (maxPrice && !isNaN(maxPrice)) query.pricePerNight.$lte = Number(maxPrice);
     }
 
     if (roomType) {
@@ -143,4 +143,23 @@ const getAllRooms = async (req, res) => {
   }
 };
 
-module.exports = { createRoom, getAllRooms };
+// @desc    Get single room by ID
+// @route   GET /api/rooms/:id
+// @access  Public
+const getRoomById = async (req, res) => {
+  try {
+    const room = await Room.findById(req.params.id);
+    if (!room) {
+      return res.status(404).json({ message: 'Room not found' });
+    }
+    res.status(200).json({
+      success: true,
+      room,
+    });
+  } catch (error) {
+    console.error(`Get Room By ID Error: ${error.message}`);
+    res.status(500).json({ message: 'Failed to fetch room' });
+  }
+};
+
+module.exports = { createRoom, getAllRooms, getRoomById };

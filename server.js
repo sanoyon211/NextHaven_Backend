@@ -17,7 +17,10 @@ const app = express();
 app.use('/api/webhooks', express.raw({ type: 'application/json' }), webhookRoutes);
 
 // Middleware
-app.use(cors()); // Enable Cross-Origin Resource Sharing
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+})); // Enable Cross-Origin Resource Sharing with credentials
 app.use(express.json()); // Parse JSON payloads
 app.use(cookieParser()); // Parse cookies
 
