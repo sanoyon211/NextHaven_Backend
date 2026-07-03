@@ -27,6 +27,9 @@ app.use(cookieParser()); // Parse cookies
 // Connect to database
 connectDB();
 
+// Initialize Cron Jobs
+require('./utils/cronJobs');
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/rooms', roomRoutes);
