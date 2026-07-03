@@ -25,6 +25,15 @@ const userSchema = new mongoose.Schema(
       enum: ['guest', 'admin'],
       default: 'guest',
     },
+    points: {
+      type: Number,
+      default: 0,
+    },
+    tier: {
+      type: String,
+      enum: ['Silver', 'Gold', 'Platinum'],
+      default: 'Silver',
+    },
   },
   { timestamps: true }
 );

@@ -62,4 +62,23 @@ const syncUser = async (req, res) => {
   }
 };
 
-module.exports = { syncUser };
+// @desc    Get current user profile
+// @route   GET /api/auth/me
+// @access  Private
+const getCurrentUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-firebaseUid');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    console.error(`Get Current User Error: ${error.message}`);
+    res.status(500).json({ message: 'Failed to fetch user profile' });
+  }
+};
+
+module.exports = { syncUser, getCurrentUser };
