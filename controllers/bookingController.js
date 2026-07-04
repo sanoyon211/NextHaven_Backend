@@ -2,6 +2,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const Room = require('../models/Room');
 const Booking = require('../models/Booking');
 const User = require('../models/User');
+const FoodOrder = require('../models/FoodOrder');
 const sendEmail = require('../utils/sendEmail');
 
 // @desc    Create Stripe Checkout Session
@@ -63,6 +64,7 @@ const createCheckoutSession = async (req, res) => {
       success_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/cancel`,
       metadata: {
+        type: 'room_booking',
         roomId: room._id.toString(),
         userId: userId.toString(),
         checkInDate: checkIn.toISOString(),
@@ -97,18 +99,27 @@ const stripeWebhook = async (req, res) => {
     const session = event.data.object;
 
     try {
-      const { roomId, userId, checkInDate, checkOutDate } = session.metadata;
+      const { type, roomId, userId, checkInDate, checkOutDate, orderId } = session.metadata;
 
-      // Create Booking record
-      await Booking.create({
-        room: roomId,
-        user: userId,
-        checkInDate: new Date(checkInDate),
-        checkOutDate: new Date(checkOutDate),
-        totalAmount: session.amount_total / 100, // Convert back from cents
-        paymentStatus: 'paid',
-        stripeSessionId: session.id,
-      });
+      if (type === 'food_order') {
+        // Update FoodOrder record
+        const order = await FoodOrder.findById(orderId);
+        if (order) {
+          order.paymentStatus = 'paid';
+          await order.save();
+        }
+      } else {
+        // Default to Room Booking logic
+        await Booking.create({
+          room: roomId,
+          user: userId,
+          checkInDate: new Date(checkInDate),
+          checkOutDate: new Date(checkOutDate),
+          totalAmount: session.amount_total / 100, // Convert back from cents
+          paymentStatus: 'paid',
+          stripeSessionId: session.id,
+        });
+      }
 
       // Update User Loyalty Points and Tier
       try {
@@ -183,4 +194,28 @@ const cancelBooking = async (req, res) => {
   }
 };
 
-module.exports = { createCheckoutSession, stripeWebhook, cancelBooking };
+// @desc    Get user's bookings
+// @route   GET /api/bookings/my-bookings
+// @access  Private
+const getMyBookings = async (req, res) => {
+  try {
+    const bookings = await Booking.find({ user: req.user._id }).populate('room').sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data: bookings });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+// @desc    Get all bookings
+// @route   GET /api/bookings
+// @access  Private/Admin
+const getAllBookings = async (req, res) => {
+  try {
+    const bookings = await Booking.find().populate('user', 'name email').populate('room', 'title pricePerNight image').sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data: bookings });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+module.exports = { createCheckoutSession, stripeWebhook, cancelBooking, getMyBookings, getAllBookings };
