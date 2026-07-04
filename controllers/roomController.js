@@ -79,7 +79,7 @@ const createRoom = async (req, res) => {
 // @access  Public
 const getAllRooms = async (req, res) => {
   try {
-    const { checkIn, checkOut, capacity, minPrice, maxPrice, roomType, amenities } = req.query;
+    const { checkIn, checkOut, capacity, minPrice, maxPrice, roomType, amenities, sort } = req.query;
 
     let query = { status: 'available' };
 
@@ -132,7 +132,18 @@ const getAllRooms = async (req, res) => {
 
     // Execute query
     console.log("Query object:", JSON.stringify(query));
-    let rooms = await Room.find(query);
+    let mongooseQuery = Room.find(query);
+
+    // 3. Sorting
+    if (sort) {
+      if (sort === 'priceAsc') {
+        mongooseQuery = mongooseQuery.sort({ pricePerNight: 1 });
+      } else if (sort === 'priceDesc') {
+        mongooseQuery = mongooseQuery.sort({ pricePerNight: -1 });
+      }
+    }
+
+    let rooms = await mongooseQuery;
     
     // Dynamic Pricing (Weekend Surge)
     let isDynamicPriceApplied = false;

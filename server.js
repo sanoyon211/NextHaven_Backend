@@ -9,6 +9,7 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const webhookRoutes = require('./routes/webhookRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const menuRoutes = require('./routes/menuRoutes');
 // Initialize the Express application
 const app = express();
 
@@ -35,6 +36,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/menu', menuRoutes);
 app.use('/api', aiRoutes);
 // Health check route
 app.get('/api/health', (req, res) => {
