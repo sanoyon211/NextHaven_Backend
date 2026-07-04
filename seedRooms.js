@@ -113,7 +113,12 @@ const seedRooms = async () => {
       }
     ];
 
-    await Room.insertMany(roomsData);
+    const roomsWithNumbers = roomsData.map((room, index) => ({
+      ...room,
+      roomNumber: String(101 + index),
+    }));
+
+    await Room.insertMany(roomsWithNumbers);
     console.log('10 rooms successfully seeded!');
     process.exit(0);
   } catch (error) {

@@ -24,12 +24,12 @@ const uploadToCloudinary = (buffer) => {
 // @desc    Create a new room with image uploads
 // @route   POST /api/rooms
 // @access  Private/Admin
-const createRoom = async (req, res) => {
+  const createRoom = async (req, res) => {
   try {
-    const { title, description, roomType, pricePerNight, capacity, amenities } = req.body;
+    const { title, roomNumber, description, roomType, pricePerNight, capacity, amenities } = req.body;
 
     // Validate required fields
-    if (!title || !description || !roomType || !pricePerNight || !capacity) {
+    if (!title || !roomNumber || !description || !roomType || !pricePerNight || !capacity) {
       return res.status(400).json({ message: 'Please provide all required fields' });
     }
 
@@ -56,6 +56,7 @@ const createRoom = async (req, res) => {
     // Create and save the room document
     const newRoom = await Room.create({
       title,
+      roomNumber,
       description,
       roomType,
       pricePerNight: Number(pricePerNight),

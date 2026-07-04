@@ -31,7 +31,7 @@ ${roomContext || "No rooms are currently available."}
 When recommending rooms, use the provided context. If a user asks for a room with specific amenities, only suggest rooms that match from the list above.`;
 
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       systemInstruction: systemInstruction 
     });
 
@@ -43,7 +43,7 @@ When recommending rooms, use the provided context. If a user asks for a room wit
     res.status(200).json({ response: text });
   } catch (error) {
     console.error(`AI Concierge Error: ${error.message}`);
-    res.status(500).json({ message: 'Failed to process AI request' });
+    res.status(500).json({ message: 'Failed to process AI request', error: error.message });
   }
 };
 
