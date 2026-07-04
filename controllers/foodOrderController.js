@@ -121,7 +121,7 @@ const getMyOrders = async (req, res) => {
 // @access  Private/Admin
 const getOrders = async (req, res) => {
   try {
-    const orders = await FoodOrder.find().populate('user', 'name email').sort({ createdAt: -1 });
+    const orders = await FoodOrder.find({ paymentStatus: { $ne: 'pending' } }).populate('user', 'name email').sort({ createdAt: -1 });
     res.status(200).json({ success: true, data: orders });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server Error' });

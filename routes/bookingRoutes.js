@@ -1,11 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { createCheckoutSession, cancelBooking, getMyBookings, getAllBookings } = require('../controllers/bookingController');
+const { createCheckoutSession, cancelBooking, getMyBookings, getAllBookings, verifyManualPayment } = require('../controllers/bookingController');
 const { verifyToken, isAdmin } = require('../middleware/authMiddleware');
 
 // POST /api/bookings/checkout
 // Protected route to create a Stripe checkout session
 router.post('/checkout', verifyToken, createCheckoutSession);
+
+// POST /api/bookings/verify-payment
+// Protected route to verify a manual payment
+router.post('/verify-payment', verifyToken, verifyManualPayment);
 
 // PUT /api/bookings/:id/cancel
 // Protected route to cancel a booking
