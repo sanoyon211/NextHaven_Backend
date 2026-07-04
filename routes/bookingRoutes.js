@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { createCheckoutSession, cancelBooking, getMyBookings, getAllBookings, verifyManualPayment } = require('../controllers/bookingController');
+const { createCheckoutSession, cancelBooking, getMyBookings, getAllBookings, verifyManualPayment, getBookedDates } = require('../controllers/bookingController');
 const { verifyToken, isAdmin } = require('../middleware/authMiddleware');
+
+// GET /api/bookings/room/:roomId/dates
+// Public route to get booked dates for a room
+router.get('/room/:roomId/dates', getBookedDates);
 
 // POST /api/bookings/checkout
 // Protected route to create a Stripe checkout session

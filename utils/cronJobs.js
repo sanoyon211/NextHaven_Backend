@@ -17,9 +17,9 @@ cron.schedule('0 0 * * *', async () => {
     const roomsToClean = [];
 
     for (const booking of pastBookings) {
-      if (booking.room && booking.room.status !== 'maintenance') {
-        // Update room status to 'maintenance'
-        booking.room.status = 'maintenance';
+      if (booking.room && booking.room.status !== 'available') {
+        // Update room status to 'available'
+        booking.room.status = 'available';
         await booking.room.save();
 
         roomsToClean.push(`- ${booking.room.title}`);

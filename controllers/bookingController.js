@@ -286,4 +286,25 @@ const getAllBookings = async (req, res) => {
   }
 };
 
-module.exports = { createCheckoutSession, stripeWebhook, cancelBooking, getMyBookings, getAllBookings, verifyManualPayment };
+// @desc    Get booked dates for a specific room
+// @route   GET /api/bookings/room/:roomId/dates
+// @access  Public
+const getBookedDates = async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    
+    // Fetch all active bookings for this room
+    // active means paymentStatus is paid and checkOutDate is in the future
+    const bookings = await Booking.find({
+      room: roomId,
+      paymentStatus: 'paid',
+      checkOutDate: { $gte: new Date() }
+    }).select('checkInDate checkOutDate -_id').sort({ checkInDate: 1 });
+
+    res.status(200).json({ success: true, data: bookings });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+module.exports = { createCheckoutSession, stripeWebhook, cancelBooking, getMyBookings, getAllBookings, verifyManualPayment, getBookedDates };
