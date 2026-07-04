@@ -28,6 +28,13 @@ const foodOrderSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    deliveryLocation: {
+      type: String,
+      required: true,
+    },
+    orderNotes: {
+      type: String,
+    },
     items: [foodOrderItemSchema],
     totalAmount: {
       type: Number,

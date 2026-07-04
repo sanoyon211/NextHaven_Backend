@@ -1,17 +1,33 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const FoodOrder = require('../models/FoodOrder');
 const Menu = require('../models/Menu');
+const Booking = require('../models/Booking');
 
 // @desc    Create Stripe Checkout Session for Food Order
 // @route   POST /api/food-orders/checkout
 // @access  Private
 const createFoodCheckoutSession = async (req, res) => {
   try {
-    const { items } = req.body;
+    const { items, deliveryLocation, orderNotes } = req.body;
     const userId = req.user._id;
+
+    // Check if user has an active room booking
+    const activeBooking = await Booking.findOne({
+      user: userId,
+      paymentStatus: 'paid',
+      checkOutDate: { $gte: new Date() }
+    });
+
+    if (!activeBooking) {
+      return res.status(403).json({ message: 'You must have an active room booking to order food.' });
+    }
 
     if (!items || items.length === 0) {
       return res.status(400).json({ message: 'No items in order' });
+    }
+
+    if (!deliveryLocation) {
+      return res.status(400).json({ message: 'Please provide a delivery location (e.g. Room 101 or Table 5)' });
     }
 
     let totalAmount = 0;
@@ -58,6 +74,8 @@ const createFoodCheckoutSession = async (req, res) => {
     const newOrder = await FoodOrder.create({
       user: userId,
       items: orderItems,
+      deliveryLocation,
+      orderNotes,
       totalAmount,
       paymentStatus: 'pending',
       orderStatus: 'preparing', // defaults
