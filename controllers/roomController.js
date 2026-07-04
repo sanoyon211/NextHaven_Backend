@@ -247,4 +247,62 @@ const updateRoomStatus = async (req, res) => {
   }
 };
 
-module.exports = { createRoom, getAllRooms, getRoomById, updateRoomStatus };
+// @desc    Update a room
+// @route   PUT /api/rooms/:id
+// @access  Private/Admin
+const updateRoom = async (req, res) => {
+  try {
+    let room = await Room.findById(req.params.id);
+    if (!room) {
+      return res.status(404).json({ message: 'Room not found' });
+    }
+    
+    // Parse amenities
+    if (req.body.amenities) {
+      try {
+        req.body.amenities = typeof req.body.amenities === 'string' ? JSON.parse(req.body.amenities) : req.body.amenities;
+      } catch (err) {
+        req.body.amenities = req.body.amenities.split(',').map(item => item.trim());
+      }
+    }
+    
+    // Convert strings to numbers
+    if (req.body.price) req.body.pricePerNight = Number(req.body.price); // Handle frontend mismatch
+    if (req.body.pricePerNight) req.body.pricePerNight = Number(req.body.pricePerNight);
+    if (req.body.capacity) req.body.capacity = Number(req.body.capacity);
+    if (req.body.roomType) req.body.roomType = req.body.roomType.toLowerCase();
+
+    let imageUrls = room.images;
+    if (req.files && req.files.length > 0) {
+      const uploadPromises = req.files.map((file) => uploadToCloudinary(file.buffer));
+      const results = await Promise.all(uploadPromises);
+      imageUrls = results.map((result) => result.secure_url);
+      req.body.images = imageUrls;
+    }
+
+    room = await Room.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    res.status(200).json({ success: true, room });
+  } catch (error) {
+    console.error(`Update Room Error: ${error.message}`);
+    res.status(500).json({ message: 'Failed to update room' });
+  }
+};
+
+// @desc    Delete a room
+// @route   DELETE /api/rooms/:id
+// @access  Private/Admin
+const deleteRoom = async (req, res) => {
+  try {
+    const room = await Room.findById(req.params.id);
+    if (!room) {
+      return res.status(404).json({ message: 'Room not found' });
+    }
+    await Room.findByIdAndDelete(req.params.id);
+    res.status(200).json({ success: true, message: 'Room removed' });
+  } catch (error) {
+    console.error(`Delete Room Error: ${error.message}`);
+    res.status(500).json({ message: 'Failed to delete room' });
+  }
+};
+
+module.exports = { createRoom, getAllRooms, getRoomById, updateRoomStatus, updateRoom, deleteRoom };

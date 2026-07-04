@@ -38,12 +38,16 @@ const getAnalytics = async (req, res) => {
       _id: { $nin: occupiedRoomIds }
     });
 
+    // 4. Count total rooms
+    const totalRoomsCount = await Room.countDocuments();
+
     res.status(200).json({
       success: true,
       data: {
         totalRevenue,
         activeBookings: activeBookingsCount,
         availableRooms: availableRoomsCount,
+        totalRooms: totalRoomsCount,
       }
     });
   } catch (error) {

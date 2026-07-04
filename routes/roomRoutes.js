@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createRoom, getAllRooms, getRoomById, updateRoomStatus } = require('../controllers/roomController');
+const { createRoom, getAllRooms, getRoomById, updateRoomStatus, updateRoom, deleteRoom } = require('../controllers/roomController');
 const { verifyToken, isAdmin } = require('../middleware/authMiddleware');
 const uploadImages = require('../middleware/uploadMiddleware');
 
@@ -19,5 +19,12 @@ router.get('/:id', getRoomById);
 // PUT /api/rooms/:id/status
 // Protected route to update room status
 router.put('/:id/status', verifyToken, isAdmin, updateRoomStatus);
+// PUT /api/rooms/:id
+// Protected route to update room
+router.put('/:id', verifyToken, isAdmin, uploadImages.array('image', 5), updateRoom);
+
+// DELETE /api/rooms/:id
+// Protected route to delete room
+router.delete('/:id', verifyToken, isAdmin, deleteRoom);
 
 module.exports = router;
