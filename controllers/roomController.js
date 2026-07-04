@@ -80,9 +80,12 @@ const uploadToCloudinary = (buffer) => {
 // @access  Public
 const getAllRooms = async (req, res) => {
   try {
-    const { checkIn, checkOut, capacity, minPrice, maxPrice, roomType, amenities, sort } = req.query;
+    const { checkIn, checkOut, capacity, minPrice, maxPrice, roomType, amenities, sort, all } = req.query;
 
-    let query = { status: 'available' };
+    let query = {};
+    if (all !== 'true') {
+      query.status = 'available';
+    }
 
     // 1. Availability Calculation Logic
     if (checkIn && checkOut) {
@@ -211,4 +214,22 @@ const getRoomById = async (req, res) => {
   }
 };
 
-module.exports = { createRoom, getAllRooms, getRoomById };
+// @desc    Update room status
+// @route   PUT /api/rooms/:id/status
+// @access  Private/Admin
+const updateRoomStatus = async (req, res) => {
+  try {
+    const room = await Room.findById(req.params.id);
+    if (!room) {
+      return res.status(404).json({ message: 'Room not found' });
+    }
+    room.status = req.body.status;
+    await room.save();
+    res.status(200).json({ success: true, room });
+  } catch (error) {
+    console.error(`Update Room Status Error: ${error.message}`);
+    res.status(500).json({ message: 'Failed to update room status' });
+  }
+};
+
+module.exports = { createRoom, getAllRooms, getRoomById, updateRoomStatus };
