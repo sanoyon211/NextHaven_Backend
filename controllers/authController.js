@@ -1,6 +1,7 @@
 const admin = require('../config/firebase');
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const cloudinary = require('../config/cloudinary');
 
 // @desc    Sync Firebase user to MongoDB and set JWT cookie
 // @route   POST /api/auth/sync
@@ -81,4 +82,56 @@ const getCurrentUser = async (req, res) => {
   }
 };
 
-module.exports = { syncUser, getCurrentUser };
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateProfile = async (req, res) => {
+  try {
+    const { name } = req.body;
+    let user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.name = name || user.name;
+
+    if (req.file) {
+      const b64 = Buffer.from(req.file.buffer).toString('base64');
+      let dataURI = 'data:' + req.file.mimetype + ';base64,' + b64;
+      const result = await cloudinary.uploader.upload(dataURI, {
+        folder: 'nexthaven/users',
+      });
+      user.avatar = result.secure_url;
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error(`Update Profile Error: ${error.message}`);
+    res.status(500).json({ message: 'Failed to update profile' });
+  }
+};
+
+// @desc    Logout user and clear cookie
+// @route   POST /api/auth/logout
+// @access  Public
+const logout = async (req, res) => {
+  res.cookie('jwt', 'none', {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true,
+  });
+  res.status(200).json({ success: true, message: 'User logged out successfully' });
+};
+
+module.exports = { syncUser, getCurrentUser, updateProfile, logout };
