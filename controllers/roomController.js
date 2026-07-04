@@ -98,6 +98,7 @@ const getAllRooms = async (req, res) => {
       const overlappingBookings = await Booking.find({
         checkInDate: { $lt: checkOutDate },
         checkOutDate: { $gt: checkInDate },
+        paymentStatus: 'paid'
       });
 
       // Extract unique room ObjectIds

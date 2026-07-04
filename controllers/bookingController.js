@@ -34,6 +34,7 @@ const createCheckoutSession = async (req, res) => {
       room: roomId,
       checkInDate: { $lt: checkOut },
       checkOutDate: { $gt: checkIn },
+      paymentStatus: 'paid'
     });
 
     if (overlappingBookings.length > 0) {
@@ -58,25 +59,11 @@ const createCheckoutSession = async (req, res) => {
       stripeSessionId: 'pending', // Will be updated
     });
 
-    // Create Checkout Session
-    const session = await stripe.checkout.sessions.create({
+    // Create Payment Intent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: totalAmount * 100, // Stripe expects amount in cents
+      currency: 'usd',
       payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: room.title,
-              description: room.description,
-            },
-            unit_amount: totalAmount * 100, // Stripe expects amount in cents
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      success_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/cancel`,
       metadata: {
         type: 'room_booking',
         bookingId: newBooking._id.toString(),
@@ -84,10 +71,10 @@ const createCheckoutSession = async (req, res) => {
       },
     });
 
-    newBooking.stripeSessionId = session.id;
+    newBooking.stripeSessionId = paymentIntent.id;
     await newBooking.save();
 
-    res.status(200).json({ url: session.url });
+    res.status(200).json({ clientSecret: paymentIntent.client_secret, amount: totalAmount });
   } catch (error) {
     console.error(`Checkout Session Error: ${error.message}`);
     res.status(500).json({ message: 'Failed to create checkout session' });
@@ -109,12 +96,12 @@ const stripeWebhook = async (req, res) => {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // Handle the checkout.session.completed event
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
+  // Handle the payment_intent.succeeded event
+  if (event.type === 'payment_intent.succeeded' || event.type === 'checkout.session.completed') {
+    const sessionOrIntent = event.data.object;
 
     try {
-      const { type, bookingId, orderId, userId } = session.metadata;
+      const { type, bookingId, orderId, userId } = sessionOrIntent.metadata || {};
 
       if (type === 'food_order') {
         // Update FoodOrder record
@@ -128,7 +115,7 @@ const stripeWebhook = async (req, res) => {
         const booking = await Booking.findById(bookingId);
         if (booking) {
           booking.paymentStatus = 'paid';
-          booking.stripeSessionId = session.id;
+          booking.stripeSessionId = sessionOrIntent.id;
           await booking.save();
         }
       }
@@ -137,7 +124,8 @@ const stripeWebhook = async (req, res) => {
       try {
         const user = await User.findById(userId);
         if (user) {
-          const pointsEarned = Math.floor(session.amount_total / 100); // 1 point per dollar
+          const amountPaid = sessionOrIntent.amount_total || sessionOrIntent.amount;
+          const pointsEarned = Math.floor(amountPaid / 100); // 1 point per dollar
           user.points = (user.points || 0) + pointsEarned;
           
           if (user.points >= 1000) {
@@ -211,7 +199,7 @@ const cancelBooking = async (req, res) => {
 // @access  Private
 const getMyBookings = async (req, res) => {
   try {
-    const bookings = await Booking.find({ user: req.user._id }).populate('room').sort({ createdAt: -1 });
+    const bookings = await Booking.find({ user: req.user._id, paymentStatus: { $ne: 'pending' } }).populate('room').sort({ createdAt: -1 });
     res.status(200).json({ success: true, data: bookings });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server Error' });

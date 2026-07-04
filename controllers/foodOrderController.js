@@ -82,12 +82,10 @@ const createFoodCheckoutSession = async (req, res) => {
       stripeSessionId: 'pending', // update later
     });
 
-    const session = await stripe.checkout.sessions.create({
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(totalAmount * 100), // Ensure it's an integer in cents
+      currency: 'usd',
       payment_method_types: ['card'],
-      line_items,
-      mode: 'payment',
-      success_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/restaurant/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/restaurant/checkout/cancel`,
       metadata: {
         orderId: newOrder._id.toString(),
         userId: userId.toString(),
@@ -96,10 +94,10 @@ const createFoodCheckoutSession = async (req, res) => {
     });
 
     // Update session id
-    newOrder.stripeSessionId = session.id;
+    newOrder.stripeSessionId = paymentIntent.id;
     await newOrder.save();
 
-    res.status(200).json({ url: session.url });
+    res.status(200).json({ clientSecret: paymentIntent.client_secret, amount: totalAmount });
   } catch (error) {
     console.error(`Food Checkout Session Error: ${error.message}`);
     res.status(500).json({ message: 'Failed to create checkout session' });
@@ -111,7 +109,7 @@ const createFoodCheckoutSession = async (req, res) => {
 // @access  Private
 const getMyOrders = async (req, res) => {
   try {
-    const orders = await FoodOrder.find({ user: req.user._id }).sort({ createdAt: -1 });
+    const orders = await FoodOrder.find({ user: req.user._id, paymentStatus: { $ne: 'pending' } }).sort({ createdAt: -1 });
     res.status(200).json({ success: true, data: orders });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server Error' });
