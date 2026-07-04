@@ -150,21 +150,36 @@ const getAllRooms = async (req, res) => {
 
     let rooms = await mongooseQuery;
     
-    // Dynamic Pricing (Weekend Surge)
+    // Check if rooms are currently occupied today
+    const today = new Date();
+    const currentBookings = await Booking.find({
+      checkInDate: { $lte: today },
+      checkOutDate: { $gt: today },
+      paymentStatus: 'paid'
+    });
+    const occupiedRoomIdsStr = currentBookings.map(b => b.room.toString());
+
+    // Dynamic Pricing & Occupancy mapping
     let isDynamicPriceApplied = false;
+    let day = today.getDay();
     if (checkIn) {
       const checkInDateObj = new Date(checkIn);
-      const day = checkInDateObj.getDay();
-      // Friday (5) or Saturday (6)
-      if (day === 5 || day === 6) {
-        isDynamicPriceApplied = true;
-        rooms = rooms.map(room => {
-          const roomObj = room.toObject ? room.toObject() : room;
-          roomObj.pricePerNight = Math.ceil(roomObj.pricePerNight * 1.2); // 20% surge
-          return roomObj;
-        });
-      }
+      day = checkInDateObj.getDay();
     }
+    
+    const isWeekend = (day === 5 || day === 6);
+    if (checkIn && isWeekend) {
+      isDynamicPriceApplied = true;
+    }
+    
+    rooms = rooms.map(room => {
+      const roomObj = room.toObject ? room.toObject() : room;
+      roomObj.isOccupiedToday = occupiedRoomIdsStr.includes(roomObj._id.toString());
+      if (checkIn && isWeekend) {
+        roomObj.pricePerNight = Math.ceil(roomObj.pricePerNight * 1.2); // 20% surge
+      }
+      return roomObj;
+    });
 
     res.status(200).json({
       success: true,

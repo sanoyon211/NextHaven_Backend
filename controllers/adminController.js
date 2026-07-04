@@ -20,7 +20,23 @@ const getAnalytics = async (req, res) => {
     });
 
     // 3. Count available rooms
-    const availableRoomsCount = await Room.countDocuments({ status: 'available' });
+    const today = new Date();
+    
+    // Get all paid bookings overlapping today
+    const occupiedBookings = await Booking.find({
+      checkInDate: { $lte: today },
+      checkOutDate: { $gt: today },
+      paymentStatus: 'paid',
+    });
+    
+    // Get unique room IDs that are occupied
+    const occupiedRoomIds = [...new Set(occupiedBookings.map(b => b.room.toString()))];
+    
+    // Find rooms that are marked 'available' but are NOT in the occupied list
+    const availableRoomsCount = await Room.countDocuments({ 
+      status: 'available',
+      _id: { $nin: occupiedRoomIds }
+    });
 
     res.status(200).json({
       success: true,
