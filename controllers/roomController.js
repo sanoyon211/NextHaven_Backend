@@ -120,7 +120,8 @@ const getAllRooms = async (req, res) => {
     }
 
     if (roomType) {
-      query.roomType = roomType;
+      const typesArray = roomType.split(',').map((item) => item.trim().toLowerCase());
+      query.roomType = { $in: typesArray };
     }
 
     if (amenities) {
@@ -130,6 +131,7 @@ const getAllRooms = async (req, res) => {
     }
 
     // Execute query
+    console.log("Query object:", JSON.stringify(query));
     let rooms = await Room.find(query);
     
     // Dynamic Pricing (Weekend Surge)
@@ -165,7 +167,24 @@ const getAllRooms = async (req, res) => {
 // @access  Public
 const getRoomById = async (req, res) => {
   try {
-    const room = await Room.findById(req.params.id);
+    const mongoose = require('mongoose');
+    let room = null;
+
+    if (mongoose.isValidObjectId(req.params.id)) {
+      room = await Room.findById(req.params.id);
+    } 
+    
+    if (!room) {
+      // Fallback: try to find by roomType (e.g., 'superior')
+      room = await Room.findOne({ roomType: req.params.id.toLowerCase() });
+    }
+
+    if (!room) {
+      // Fallback: try to find by title slug (e.g., 'standard-room')
+      const titleRegex = new RegExp('^' + req.params.id.replace(/-/g, ' ') + '$', 'i');
+      room = await Room.findOne({ title: { $regex: titleRegex } });
+    }
+
     if (!room) {
       return res.status(404).json({ message: 'Room not found' });
     }

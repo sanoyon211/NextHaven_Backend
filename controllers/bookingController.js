@@ -1,6 +1,7 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const Room = require('../models/Room');
 const Booking = require('../models/Booking');
+const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
 
 // @desc    Create Stripe Checkout Session
@@ -108,6 +109,27 @@ const stripeWebhook = async (req, res) => {
         paymentStatus: 'paid',
         stripeSessionId: session.id,
       });
+
+      // Update User Loyalty Points and Tier
+      try {
+        const user = await User.findById(userId);
+        if (user) {
+          const pointsEarned = Math.floor(session.amount_total / 100); // 1 point per dollar
+          user.points = (user.points || 0) + pointsEarned;
+          
+          if (user.points >= 1000) {
+            user.tier = 'Platinum';
+          } else if (user.points >= 500) {
+            user.tier = 'Gold';
+          } else {
+            user.tier = 'Silver';
+          }
+          await user.save();
+        }
+      } catch (userError) {
+        console.error(`Error updating loyalty points: ${userError.message}`);
+        // Do not crash the webhook if points fail
+      }
 
     } catch (error) {
       console.error(`Error saving booking to DB: ${error.message}`);
