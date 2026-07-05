@@ -40,10 +40,11 @@ const syncUser = async (req, res) => {
     );
 
     // Set JWT in HTTP-only, secure cookie
+    const isProduction = process.env.NODE_ENV === "production";
     res.cookie("jwt", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict", // Prevent CSRF attacks
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "strict", // Prevent CSRF attacks locally, allow cross-site in production
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -127,9 +128,12 @@ const updateProfile = async (req, res) => {
 // @route   POST /api/auth/logout
 // @access  Public
 const logout = async (req, res) => {
+  const isProduction = process.env.NODE_ENV === "production";
   res.cookie("jwt", "none", {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "strict",
   });
   res
     .status(200)
