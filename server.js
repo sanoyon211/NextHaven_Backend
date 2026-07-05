@@ -29,6 +29,7 @@ app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 ); // Enable Cross-Origin Resource Sharing with credentials
 app.use(express.json()); // Parse JSON payloads
