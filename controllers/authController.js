@@ -51,6 +51,7 @@ const syncUser = async (req, res) => {
 
     res.status(200).json({
       message: "User synced successfully",
+      token, // Return token for frontend localStorage
       user: {
         _id: user._id,
         name: user.name,
