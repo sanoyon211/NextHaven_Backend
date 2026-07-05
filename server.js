@@ -12,6 +12,7 @@ const aiRoutes = require("./routes/aiRoutes");
 const menuRoutes = require("./routes/menuRoutes");
 const foodOrderRoutes = require("./routes/foodOrderRoutes");
 const reservationRoutes = require("./routes/reservationRoutes");
+const cronRoutes = require("./routes/cronRoutes");
 // Initialize the Express application
 const app = express();
 
@@ -36,8 +37,8 @@ app.use(cookieParser()); // Parse cookies
 // Connect to database
 connectDB();
 
-// Initialize Cron Jobs
-require("./utils/cronJobs");
+// Cron Jobs (Migrated to API route for Vercel)
+// require("./utils/cronJobs");
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -47,6 +48,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/menu", menuRoutes);
 app.use("/api/food-orders", foodOrderRoutes);
 app.use("/api/reservations", reservationRoutes);
+app.use("/api/cron", cronRoutes);
 app.use("/api", aiRoutes);
 // Health check route
 app.get("/api/health", (req, res) => {
@@ -61,3 +63,6 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+// Export the Express API (Required for Vercel Serverless)
+module.exports = app;
