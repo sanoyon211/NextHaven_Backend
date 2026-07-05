@@ -6,6 +6,9 @@ const verifyToken = async (req, res, next) => {
   try {
     // Try to get token from cookie, then from Authorization header
     let token = req.cookies.jwt;
+    if (token === "none") {
+      token = null;
+    }
     if (!token && req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
       token = req.headers.authorization.split(" ")[1];
     }
