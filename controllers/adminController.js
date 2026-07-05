@@ -1,5 +1,6 @@
 const Booking = require('../models/Booking');
 const Room = require('../models/Room');
+const User = require('../models/User');
 
 // @desc    Get Admin Analytics
 // @route   GET /api/admin/analytics
@@ -56,4 +57,51 @@ const getAnalytics = async (req, res) => {
   }
 };
 
-module.exports = { getAnalytics };
+// @desc    Get all users
+// @route   GET /api/admin/users
+// @access  Private/Admin
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}).sort({ createdAt: -1 }).select('-password');
+    res.status(200).json({ success: true, data: users });
+  } catch (error) {
+    console.error(`Get All Users Error: ${error.message}`);
+    res.status(500).json({ message: 'Failed to retrieve users' });
+  }
+};
+
+// @desc    Update user role
+// @route   PUT /api/admin/users/:id/role
+// @access  Private/Admin
+const updateUserRole = async (req, res) => {
+  try {
+    const { role } = req.body;
+    
+    // Prevent invalid roles
+    if (!['guest', 'admin'].includes(role)) {
+      return res.status(400).json({ message: 'Invalid role specified' });
+    }
+
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Optional safeguard: prevent changing own role to prevent locking oneself out
+    // Since the plan mentioned this, let's check it.
+    if (req.user._id.toString() === user._id.toString() && role === 'guest') {
+       return res.status(400).json({ message: 'You cannot revoke your own admin access' });
+    }
+
+    user.role = role;
+    await user.save();
+
+    res.status(200).json({ success: true, data: user });
+  } catch (error) {
+    console.error(`Update User Role Error: ${error.message}`);
+    res.status(500).json({ message: 'Failed to update user role' });
+  }
+};
+
+module.exports = { getAnalytics, getAllUsers, updateUserRole };
