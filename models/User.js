@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
@@ -18,12 +18,12 @@ const userSchema = new mongoose.Schema(
     },
     avatar: {
       type: String,
-      default: '',
+      default: "",
     },
     role: {
       type: String,
-      enum: ['guest', 'admin'],
-      default: 'guest',
+      enum: ["guest", "admin"],
+      default: "guest",
     },
     points: {
       type: Number,
@@ -31,11 +31,11 @@ const userSchema = new mongoose.Schema(
     },
     tier: {
       type: String,
-      enum: ['Silver', 'Gold', 'Platinum'],
-      default: 'Silver',
+      enum: ["Silver", "Gold", "Platinum"],
+      default: "Silver",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model("User", userSchema);

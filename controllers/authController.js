@@ -1,7 +1,7 @@
-const admin = require('../config/firebase');
-const User = require('../models/User');
-const jwt = require('jsonwebtoken');
-const cloudinary = require('../config/cloudinary');
+const admin = require("../config/firebase");
+const User = require("../models/User");
+const jwt = require("jsonwebtoken");
+const cloudinary = require("../config/cloudinary");
 
 // @desc    Sync Firebase user to MongoDB and set JWT cookie
 // @route   POST /api/auth/sync
@@ -11,12 +11,12 @@ const syncUser = async (req, res) => {
     const { firebaseToken } = req.body;
 
     if (!firebaseToken) {
-      return res.status(400).json({ message: 'Firebase token is required' });
+      return res.status(400).json({ message: "Firebase token is required" });
     }
 
     // Verify the Firebase ID token
     const decodedToken = await admin.auth().verifyIdToken(firebaseToken);
-    
+
     const { uid, email, name, picture } = decodedToken;
 
     // Find user in MongoDB or create a new one
@@ -26,9 +26,9 @@ const syncUser = async (req, res) => {
       user = await User.create({
         firebaseUid: uid,
         email,
-        name: name || 'User', // Fallback if name is missing
-        avatar: picture || '',
-        role: 'guest',
+        name: name || "User", // Fallback if name is missing
+        avatar: picture || "",
+        role: "guest",
       });
     }
 
@@ -36,19 +36,19 @@ const syncUser = async (req, res) => {
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      { expiresIn: process.env.JWT_EXPIRES_IN || "7d" },
     );
 
     // Set JWT in HTTP-only, secure cookie
-    res.cookie('jwt', token, {
+    res.cookie("jwt", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict', // Prevent CSRF attacks
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict", // Prevent CSRF attacks
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     res.status(200).json({
-      message: 'User synced successfully',
+      message: "User synced successfully",
       user: {
         _id: user._id,
         name: user.name,
@@ -59,7 +59,7 @@ const syncUser = async (req, res) => {
     });
   } catch (error) {
     console.error(`Sync User Error: ${error.message}`);
-    res.status(401).json({ message: 'Invalid Firebase token or sync failed' });
+    res.status(401).json({ message: "Invalid Firebase token or sync failed" });
   }
 };
 
@@ -68,9 +68,9 @@ const syncUser = async (req, res) => {
 // @access  Private
 const getCurrentUser = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-firebaseUid');
+    const user = await User.findById(req.user._id).select("-firebaseUid");
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
     res.status(200).json({
       success: true,
@@ -78,7 +78,7 @@ const getCurrentUser = async (req, res) => {
     });
   } catch (error) {
     console.error(`Get Current User Error: ${error.message}`);
-    res.status(500).json({ message: 'Failed to fetch user profile' });
+    res.status(500).json({ message: "Failed to fetch user profile" });
   }
 };
 
@@ -91,16 +91,16 @@ const updateProfile = async (req, res) => {
     let user = await User.findById(req.user._id);
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     user.name = name || user.name;
 
     if (req.file) {
-      const b64 = Buffer.from(req.file.buffer).toString('base64');
-      let dataURI = 'data:' + req.file.mimetype + ';base64,' + b64;
+      const b64 = Buffer.from(req.file.buffer).toString("base64");
+      let dataURI = "data:" + req.file.mimetype + ";base64," + b64;
       const result = await cloudinary.uploader.upload(dataURI, {
-        folder: 'nexthaven/users',
+        folder: "nexthaven/users",
       });
       user.avatar = result.secure_url;
     }
@@ -119,7 +119,7 @@ const updateProfile = async (req, res) => {
     });
   } catch (error) {
     console.error(`Update Profile Error: ${error.message}`);
-    res.status(500).json({ message: 'Failed to update profile' });
+    res.status(500).json({ message: "Failed to update profile" });
   }
 };
 
@@ -127,11 +127,13 @@ const updateProfile = async (req, res) => {
 // @route   POST /api/auth/logout
 // @access  Public
 const logout = async (req, res) => {
-  res.cookie('jwt', 'none', {
+  res.cookie("jwt", "none", {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true,
   });
-  res.status(200).json({ success: true, message: 'User logged out successfully' });
+  res
+    .status(200)
+    .json({ success: true, message: "User logged out successfully" });
 };
 
 module.exports = { syncUser, getCurrentUser, updateProfile, logout };

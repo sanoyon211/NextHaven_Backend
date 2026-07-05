@@ -1,11 +1,12 @@
-const Reservation = require('../models/Reservation');
+const Reservation = require("../models/Reservation");
 
 // @desc    Create a new reservation
 // @route   POST /api/reservations
 // @access  Private
 const createReservation = async (req, res) => {
   try {
-    const { name, email, phone, date, time, guests, specialRequests } = req.body;
+    const { name, email, phone, date, time, guests, specialRequests } =
+      req.body;
 
     const reservation = new Reservation({
       user: req.user._id,
@@ -15,14 +16,14 @@ const createReservation = async (req, res) => {
       date,
       time,
       guests,
-      specialRequests
+      specialRequests,
     });
 
     const createdReservation = await reservation.save();
     res.status(201).json(createdReservation);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -31,11 +32,13 @@ const createReservation = async (req, res) => {
 // @access  Private
 const getUserReservations = async (req, res) => {
   try {
-    const reservations = await Reservation.find({ user: req.user._id }).sort({ date: -1 });
+    const reservations = await Reservation.find({ user: req.user._id }).sort({
+      date: -1,
+    });
     res.json({ data: reservations });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -44,11 +47,13 @@ const getUserReservations = async (req, res) => {
 // @access  Private/Admin
 const getAllReservations = async (req, res) => {
   try {
-    const reservations = await Reservation.find({}).populate('user', 'id name email').sort({ date: -1 });
+    const reservations = await Reservation.find({})
+      .populate("user", "id name email")
+      .sort({ date: -1 });
     res.json({ data: reservations });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -61,12 +66,15 @@ const updateReservationStatus = async (req, res) => {
     const reservation = await Reservation.findById(req.params.id);
 
     if (!reservation) {
-      return res.status(404).json({ message: 'Reservation not found' });
+      return res.status(404).json({ message: "Reservation not found" });
     }
 
     // Verify user owns reservation or is admin
-    if (reservation.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-      return res.status(401).json({ message: 'Not authorized' });
+    if (
+      reservation.user.toString() !== req.user._id.toString() &&
+      req.user.role !== "admin"
+    ) {
+      return res.status(401).json({ message: "Not authorized" });
     }
 
     reservation.status = status;
@@ -74,7 +82,7 @@ const updateReservationStatus = async (req, res) => {
     res.json(updatedReservation);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -82,5 +90,5 @@ module.exports = {
   createReservation,
   getUserReservations,
   getAllReservations,
-  updateReservationStatus
+  updateReservationStatus,
 };

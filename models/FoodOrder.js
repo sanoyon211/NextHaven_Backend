@@ -1,9 +1,9 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const foodOrderItemSchema = new mongoose.Schema({
   menuItem: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Menu',
+    ref: "Menu",
     required: true,
   },
   name: {
@@ -25,7 +25,7 @@ const foodOrderSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
     },
     deliveryLocation: {
@@ -42,20 +42,20 @@ const foodOrderSchema = new mongoose.Schema(
     },
     paymentStatus: {
       type: String,
-      enum: ['pending', 'paid', 'failed', 'refunded'],
-      default: 'pending',
+      enum: ["pending", "paid", "failed", "refunded"],
+      default: "pending",
     },
     orderStatus: {
       type: String,
-      enum: ['preparing', 'ready', 'delivered', 'cancelled'],
-      default: 'preparing',
+      enum: ["preparing", "ready", "delivered", "cancelled"],
+      default: "preparing",
     },
     stripeSessionId: {
       type: String,
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-module.exports = mongoose.model('FoodOrder', foodOrderSchema);
+module.exports = mongoose.model("FoodOrder", foodOrderSchema);

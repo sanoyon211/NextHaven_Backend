@@ -1,6 +1,6 @@
-require('dotenv').config();
-const mongoose = require('mongoose');
-const Room = require('./models/Room');
+require("dotenv").config();
+const mongoose = require("mongoose");
+const Room = require("./models/Room");
 
 const update = async () => {
   await mongoose.connect(process.env.MONGO_URI);
@@ -12,7 +12,7 @@ const update = async () => {
       await r.save();
     }
   }
-  console.log('Rooms updated with room numbers');
+  console.log("Rooms updated with room numbers");
   process.exit(0);
 };
 update();

@@ -1,30 +1,49 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { createRoom, getAllRooms, getRoomById, updateRoomStatus, updateRoom, deleteRoom } = require('../controllers/roomController');
-const { verifyToken, isAdmin } = require('../middleware/authMiddleware');
-const uploadImages = require('../middleware/uploadMiddleware');
+const {
+  createRoom,
+  getAllRooms,
+  getRoomById,
+  updateRoomStatus,
+  updateRoom,
+  deleteRoom,
+} = require("../controllers/roomController");
+const { verifyToken, isAdmin } = require("../middleware/authMiddleware");
+const uploadImages = require("../middleware/uploadMiddleware");
 
 // POST /api/rooms
 // Protected route: check authentication, check admin role, then handle up to 5 image uploads
-router.post('/', verifyToken, isAdmin, uploadImages.array('images', 5), createRoom);
+router.post(
+  "/",
+  verifyToken,
+  isAdmin,
+  uploadImages.array("images", 5),
+  createRoom,
+);
 
 // GET /api/rooms
 // Public route to get all rooms with search, filter, and availability
-router.get('/', getAllRooms);
+router.get("/", getAllRooms);
 
 // GET /api/rooms/:id
 // Public route to get single room
-router.get('/:id', getRoomById);
+router.get("/:id", getRoomById);
 
 // PUT /api/rooms/:id/status
 // Protected route to update room status
-router.put('/:id/status', verifyToken, isAdmin, updateRoomStatus);
+router.put("/:id/status", verifyToken, isAdmin, updateRoomStatus);
 // PUT /api/rooms/:id
 // Protected route to update room
-router.put('/:id', verifyToken, isAdmin, uploadImages.array('image', 5), updateRoom);
+router.put(
+  "/:id",
+  verifyToken,
+  isAdmin,
+  uploadImages.array("image", 5),
+  updateRoom,
+);
 
 // DELETE /api/rooms/:id
 // Protected route to delete room
-router.delete('/:id', verifyToken, isAdmin, deleteRoom);
+router.delete("/:id", verifyToken, isAdmin, deleteRoom);
 
 module.exports = router;

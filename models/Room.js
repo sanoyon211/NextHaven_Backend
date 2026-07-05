@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const roomSchema = new mongoose.Schema(
   {
@@ -17,7 +17,7 @@ const roomSchema = new mongoose.Schema(
     },
     roomType: {
       type: String,
-      enum: ['single', 'double', 'suite', 'deluxe'],
+      enum: ["single", "double", "suite", "deluxe"],
       required: true,
     },
     pricePerNight: {
@@ -36,11 +36,11 @@ const roomSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['available', 'maintenance'],
-      default: 'available',
+      enum: ["available", "maintenance"],
+      default: "available",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-module.exports = mongoose.model('Room', roomSchema);
+module.exports = mongoose.model("Room", roomSchema);
